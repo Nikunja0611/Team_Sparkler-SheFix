@@ -7,17 +7,23 @@ const VideoKYC = ({ userId, onVerified }) => {
   const [status, setStatus] = useState('Initializing Camera...');
 
   // Load Face API Models
+  // Inside VideoKYC.jsx
+
   useEffect(() => {
     const loadModels = async () => {
-      const MODEL_URL = '/models'; // <--- Points to public/models
+      const MODEL_URL = '/models';
 
       try {
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+          // faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL) // <--- COMMENT THIS OUT
         ]);
-        console.log("Models Loaded Successfully");
+        console.log("Models Loaded");
+        
+        // <--- ADD THIS LINE to actually turn on the camera!
+        startVideo(); 
+        
       } catch (error) {
         console.error("Error loading models:", error);
       }
