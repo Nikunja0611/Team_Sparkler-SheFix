@@ -2,7 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Component Imports
-import Landing from './pages/Landing'; // Ensure Landing.jsx is in src/pages/
+import Landing from './pages/Landing'; 
+import Login from './pages/Login';
+import Register from './pages/Register';
 import VideoKYC from './components/VideoKYC';
 
 //Css Imports
@@ -14,7 +16,11 @@ function App() {
       <Routes>
         {/* Default Route: Landing Page */}
         <Route path="/" element={<Landing />} />
-
+        
+        {/* Authentication Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} /> 
+        
         {/* KYC Verification Route */}
         <Route path="/verify" element={<VideoKYC />} />
 

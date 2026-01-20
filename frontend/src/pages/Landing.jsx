@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // <--- Import useNavigate
 import { 
   Menu, X, ChevronRight, Shield, Mic, GraduationCap, 
   Users, Star, MapPin, Phone, Mail, CheckCircle, ArrowRight 
@@ -6,6 +7,11 @@ import {
 
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate(); // <--- Initialize Hook
+
+  // Navigation Handlers
+  const handleRegister = () => navigate('/register');
+  const handleLogin = () => navigate('/login');
 
   const features = [
     {
@@ -66,7 +72,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <div className="flex items-center space-x-3 cursor-pointer">
+            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
               <div className="w-10 h-10 bg-gradient-to-br from-shePurple to-purple-700 rounded-lg flex items-center justify-center shadow-md">
                 <Shield className="w-6 h-6 text-white" />
               </div>
@@ -83,7 +89,11 @@ const Landing = () => {
                   {item}
                 </a>
               ))}
-              <button className="bg-shePurple text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-800 transition shadow-lg shadow-purple-200 transform hover:-translate-y-0.5">
+              {/* Updated: Redirects to Register */}
+              <button 
+                onClick={handleRegister}
+                className="bg-shePurple text-white px-6 py-2.5 rounded-full font-medium hover:bg-purple-800 transition shadow-lg shadow-purple-200 transform hover:-translate-y-0.5"
+              >
                 Get Started
               </button>
             </div>
@@ -105,7 +115,11 @@ const Landing = () => {
                   {item}
                 </a>
               ))}
-              <button className="w-full bg-shePurple text-white px-6 py-3 rounded-xl font-medium shadow-md">
+              {/* Updated: Redirects to Register */}
+              <button 
+                onClick={handleRegister}
+                className="w-full bg-shePurple text-white px-6 py-3 rounded-xl font-medium shadow-md"
+              >
                 Get Started
               </button>
             </div>
@@ -136,11 +150,19 @@ const Landing = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <button className="bg-shePurple text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-purple-800 transition shadow-xl shadow-purple-200 flex items-center justify-center gap-2 group">
+                {/* Updated: Redirects to Register */}
+                <button 
+                  onClick={handleRegister}
+                  className="bg-shePurple text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-purple-800 transition shadow-xl shadow-purple-200 flex items-center justify-center gap-2 group"
+                >
                   Join as Worker
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
                 </button>
-                <button className="bg-white text-shePurple border-2 border-shePurple/20 px-8 py-4 rounded-full text-lg font-semibold hover:bg-purple-50 transition">
+                {/* Updated: Redirects to Register (or Login if you prefer) */}
+                <button 
+                  onClick={handleRegister}
+                  className="bg-white text-shePurple border-2 border-shePurple/20 px-8 py-4 rounded-full text-lg font-semibold hover:bg-purple-50 transition"
+                >
                   Find Workers
                 </button>
               </div>
@@ -332,10 +354,18 @@ const Landing = () => {
               Join thousands of empowered women earning with dignity and safety. Start your journey today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-              <button className="bg-white text-shePurple px-8 py-4 rounded-full text-lg font-bold hover:shadow-lg transition transform hover:scale-105">
+              {/* Updated: Redirects to Register */}
+              <button 
+                onClick={handleRegister}
+                className="bg-white text-shePurple px-8 py-4 rounded-full text-lg font-bold hover:shadow-lg transition transform hover:scale-105"
+              >
                 Register as Worker
               </button>
-              <button className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white/10 transition">
+              {/* Updated: Redirects to Register */}
+              <button 
+                onClick={handleRegister}
+                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white/10 transition"
+              >
                 Post a Job
               </button>
             </div>
