@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Shield, MapPin, Star, Calendar, User, Briefcase, 
-  Wallet, Bell, CheckCircle, Search, Mic, Globe, LogOut, Filter, X
+  Shield, MapPin, Calendar, Briefcase, 
+  CheckCircle, Search, Mic, Globe, LogOut, Filter, Clock, Banknote
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
 
@@ -14,32 +14,75 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('feed'); 
   const [language, setLanguage] = useState('en'); 
   
-  // --- NEW FILTERS STATE ---
+  // --- FILTERS STATE ---
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [minPayFilter, setMinPayFilter] = useState(0);
-  const [showFilters, setShowFilters] = useState(false); // Toggle filter menu
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('All'); // 'All', 'Short Term', 'Long Term'
+  const [showFilters, setShowFilters] = useState(false);
 
   // Worker Stats
-  const [stats, setStats] = useState({ earnings: 1200, jobsDone: 14, safetyScore: 98 });
+  const [stats, setStats] = useState({ earnings: 4500, jobsDone: 14, safetyScore: 98 });
 
-  // Mock Data
+  // --- MOCK DATA (Updated with Service Types) ---
   const [availableJobs, setAvailableJobs] = useState([
-    { id: 1, title: "House Cleaning", loc: "Sector 12, Navi Mumbai", pay: 300, type: "Cleaning", time: "2 Hours", safety: "Verified" },
-    { id: 2, title: "Cooking (Dinner)", loc: "Nerul, Mumbai", pay: 500, type: "Cooking", time: "3 Hours", safety: "Verified" },
-    { id: 3, title: "Elderly Care", loc: "Vashi, Mumbai", pay: 800, type: "Care", time: "Full Day", safety: "Pending" },
-    { id: 4, title: "Bathroom Cleaning", loc: "Belapur, Mumbai", pay: 400, type: "Cleaning", time: "1 Hour", safety: "Verified" },
-    { id: 5, title: "Office Dusting", loc: "Vashi, Mumbai", pay: 600, type: "Cleaning", time: "4 Hours", safety: "Verified" },
+    { 
+      id: 1, 
+      title: "Deep House Cleaning", 
+      loc: "Sector 12, Navi Mumbai", 
+      pay: 300, 
+      unit: "hr", 
+      serviceType: "Short Term", 
+      category: "Cleaning", 
+      duration: "4 Hours (Today)", 
+      safety: "Verified" 
+    },
+    { 
+      id: 2, 
+      title: "Full-Time Cook", 
+      loc: "Nerul, Mumbai", 
+      pay: 15000, 
+      unit: "month", 
+      serviceType: "Long Term", 
+      category: "Cooking", 
+      duration: "6 Months Contract", 
+      safety: "Verified" 
+    },
+    { 
+      id: 3, 
+      title: "Garden Maintenance", 
+      loc: "Vashi, Mumbai", 
+      pay: 500, 
+      unit: "task", 
+      serviceType: "Short Term", 
+      category: "Gardening", 
+      duration: "One Time Task", 
+      safety: "Pending" 
+    },
+    { 
+      id: 4, 
+      title: "Elderly Caretaker", 
+      loc: "Belapur, Mumbai", 
+      pay: 18000, 
+      unit: "month", 
+      serviceType: "Long Term", 
+      category: "Care", 
+      duration: "1 Year Contract", 
+      safety: "Verified" 
+    },
+    { 
+      id: 5, 
+      title: "Utensil Cleaning", 
+      loc: "Kharghar, Mumbai", 
+      pay: 200, 
+      unit: "hr", 
+      serviceType: "Short Term", 
+      category: "Cleaning", 
+      duration: "1 Hour (Daily)", 
+      safety: "Verified" 
+    },
   ]);
 
   const [mySchedule, setMySchedule] = useState([]);
-
-  // Mock Seekers Data
-  const topWorkers = [
-    { id: 101, name: "Riya Patel", role: "Electrician", rating: 4.9, jobs: 50, verified: true, img: 30 },
-    { id: 102, name: "Sunita Devi", role: "Maid / Cleaner", rating: 4.7, jobs: 120, verified: true, img: 45 },
-    { id: 103, name: "Anjali Singh", role: "Caregiver", rating: 5.0, jobs: 20, verified: true, img: 12 },
-  ];
 
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'));
@@ -58,10 +101,11 @@ const Dashboard = () => {
     const cmd = command.toLowerCase();
     alert(`🎤 Voice Command: "${command}"`);
     
-    if (cmd.includes("clean")) setSearchQuery("Cleaning");
+    if (cmd.includes("long term") || cmd.includes("mahina")) setServiceTypeFilter("Long Term");
+    else if (cmd.includes("short term") || cmd.includes("ghanta")) setServiceTypeFilter("Short Term");
+    else if (cmd.includes("clean")) setSearchQuery("Cleaning");
     else if (cmd.includes("cook")) setSearchQuery("Cooking");
-    else if (cmd.includes("vashi")) setLocationFilter("Vashi");
-    else if (cmd.includes("reset")) { setSearchQuery(""); setLocationFilter(""); }
+    else if (cmd.includes("reset")) { setSearchQuery(""); setServiceTypeFilter("All"); }
   };
 
   const acceptJob = (job) => {
@@ -71,16 +115,20 @@ const Dashboard = () => {
     }
     setAvailableJobs(availableJobs.filter(j => j.id !== job.id));
     setMySchedule([...mySchedule, job]);
-    setStats(prev => ({ ...prev, jobsDone: prev.jobsDone + 1, earnings: prev.earnings + job.pay }));
-    alert("✅ Job Accepted!");
+    
+    // Logic: If hourly, add pay directly. If monthly, maybe add pro-rated amount (simplified here)
+    const earningsToAdd = job.unit === 'month' ? 0 : job.pay; 
+    setStats(prev => ({ ...prev, jobsDone: prev.jobsDone + 1, earnings: prev.earnings + earningsToAdd }));
+    
+    alert(`✅ ${job.serviceType} Job Accepted!`);
   };
 
   // --- FILTER LOGIC ---
   const filteredJobs = (activeTab === 'feed' ? availableJobs : mySchedule).filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.type.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLocation = locationFilter ? job.loc.toLowerCase().includes(locationFilter.toLowerCase()) : true;
-    const matchesPay = job.pay >= minPayFilter;
-    return matchesSearch && matchesLocation && matchesPay;
+    const matchesType = serviceTypeFilter === 'All' ? true : job.serviceType === serviceTypeFilter;
+    return matchesSearch && matchesLocation && matchesType;
   });
 
   if (!user) return null;
@@ -118,18 +166,15 @@ const Dashboard = () => {
         {/* ================= WORKER DASHBOARD ================= */}
         {isWorker && (
           <>
-            {/* 1. Hero Section (Fixed Text Color) */}
+            {/* 1. Hero Section */}
             <div className="bg-gradient-to-r from-shePurple to-purple-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
               <div className="relative z-10">
-                {/* Explicit text-white class ensures visibility */}
-                <h2 className="text-3xl font-bold mb-2 text-white">
-                  Namaste, {user.name}! 🙏
-                </h2>
-                <p className="text-purple-100 opacity-90 mb-6">Tap the mic to find work instantly.</p>
+                <h2 className="text-3xl font-bold mb-2 text-white">Namaste, {user.name}! 🙏</h2>
+                <p className="text-purple-100 opacity-90 mb-6">Find daily gigs or monthly employment.</p>
                 
                 <div className="flex flex-wrap gap-4">
                   <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                    <p className="text-xs text-purple-100 uppercase tracking-wider">Earnings</p>
+                    <p className="text-xs text-purple-100 uppercase tracking-wider">Total Earnings</p>
                     <p className="text-2xl font-bold text-white">₹{stats.earnings}</p>
                   </div>
                   <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
@@ -156,13 +201,13 @@ const Dashboard = () => {
                   onClick={() => setActiveTab('feed')}
                   className={`px-6 py-2 rounded-lg font-bold text-sm transition ${activeTab === 'feed' ? 'bg-shePurple text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                 >
-                  Jobs Feed
+                  New Jobs
                 </button>
                 <button 
                   onClick={() => setActiveTab('schedule')}
                   className={`px-6 py-2 rounded-lg font-bold text-sm transition ${activeTab === 'schedule' ? 'bg-shePurple text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
                 >
-                  My Schedule <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs ml-1">{mySchedule.length}</span>
+                  My Jobs <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs ml-1">{mySchedule.length}</span>
                 </button>
               </div>
 
@@ -172,7 +217,7 @@ const Dashboard = () => {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input 
                     type="text" 
-                    placeholder="Search 'Cleaning'..." 
+                    placeholder="Search 'Cleaning', 'Gardener'..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-shePurple focus:ring-2 focus:ring-purple-100 outline-none transition"
@@ -191,6 +236,18 @@ const Dashboard = () => {
             {showFilters && (
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn">
                 <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Service Type</label>
+                  <select 
+                    value={serviceTypeFilter}
+                    onChange={(e) => setServiceTypeFilter(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-gray-50 focus:bg-white transition"
+                  >
+                    <option value="All">All Types</option>
+                    <option value="Short Term">Short Term (Hourly/Daily)</option>
+                    <option value="Long Term">Long Term (Monthly)</option>
+                  </select>
+                </div>
+                <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Location</label>
                   <input 
                     type="text" 
@@ -200,22 +257,9 @@ const Dashboard = () => {
                     className="w-full p-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-gray-50 focus:bg-white transition"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Min Charges</label>
-                  <select 
-                    value={minPayFilter}
-                    onChange={(e) => setMinPayFilter(Number(e.target.value))}
-                    className="w-full p-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-gray-50 focus:bg-white transition"
-                  >
-                    <option value="0">Any Amount</option>
-                    <option value="300">₹300+</option>
-                    <option value="500">₹500+</option>
-                    <option value="1000">₹1000+</option>
-                  </select>
-                </div>
                 <div className="flex items-end">
                   <button 
-                    onClick={() => { setLocationFilter(''); setMinPayFilter(0); setSearchQuery(''); }}
+                    onClick={() => { setLocationFilter(''); setServiceTypeFilter('All'); setSearchQuery(''); }}
                     className="w-full py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100"
                   >
                     Clear All Filters
@@ -230,26 +274,49 @@ const Dashboard = () => {
                 filteredJobs.map((job) => (
                   <div key={job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4 group">
                     <div className="flex items-center gap-4 w-full">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition ${
-                        job.type === 'Cleaning' ? 'bg-blue-50' : job.type === 'Cooking' ? 'bg-orange-50' : 'bg-purple-50'
+                      {/* Dynamic Icon Based on Category */}
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition ${
+                        job.category === 'Cleaning' ? 'bg-blue-50 text-blue-500' : 
+                        job.category === 'Cooking' ? 'bg-orange-50 text-orange-500' : 
+                        job.category === 'Gardening' ? 'bg-green-50 text-green-600' :
+                        'bg-purple-50 text-purple-500'
                       }`}>
-                        {job.type === 'Cleaning' ? '🧹' : job.type === 'Cooking' ? '🍳' : '👵'}
+                        {job.category === 'Cleaning' ? '🧹' : job.category === 'Cooking' ? '🍳' : job.category === 'Gardening' ? '🌱' : '👵'}
                       </div>
+                      
                       <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg">{job.title}</h4>
-                        <div className="flex flex-wrap gap-3 mt-1 text-sm text-gray-500">
-                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {job.loc}</span>
-                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {job.time}</span>
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-bold text-gray-900 text-lg">{job.title}</h4>
+                          {/* Service Type Badge */}
+                          <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md border ${
+                            job.serviceType === 'Long Term' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-100'
+                          }`}>
+                            {job.serviceType}
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-500">
+                          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.loc}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {job.duration}</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-gray-100 pt-4 md:pt-0 mt-2 md:mt-0">
                       <div className="text-right">
-                        <p className="text-lg font-bold text-shePurple">₹{job.pay}</p>
-                        {job.safety === 'Verified' && (
-                          <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100 flex items-center gap-1 justify-end">
-                            <Shield className="w-3 h-3" /> Safe
+                        {/* Dynamic Pay Display */}
+                        <p className="text-lg font-bold text-gray-900 flex items-center gap-1">
+                          <Banknote className="w-4 h-4 text-gray-400" />
+                          ₹{job.pay.toLocaleString()} <span className="text-xs text-gray-500 font-normal">/ {job.unit}</span>
+                        </p>
+                        
+                        {job.safety === 'Verified' ? (
+                          <span className="text-[10px] bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100 flex items-center gap-1 justify-end mt-1">
+                            <Shield className="w-3 h-3" /> Pink-Shield Safe
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded border border-yellow-100 flex items-center gap-1 justify-end mt-1">
+                            ⚠️ Verification Pending
                           </span>
                         )}
                       </div>
@@ -262,7 +329,7 @@ const Dashboard = () => {
                           Accept
                         </button>
                       ) : (
-                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm">
+                        <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm border border-green-100">
                           <CheckCircle className="w-4 h-4" /> Accepted
                         </div>
                       )}
@@ -273,51 +340,19 @@ const Dashboard = () => {
                 <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
                   <div className="text-4xl mb-4">🔍</div>
                   <h3 className="text-lg font-bold text-gray-900">No jobs found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or search terms.</p>
+                  <p className="text-gray-500">Try adjusting your filters (Location, Service Type) or search terms.</p>
                 </div>
               )}
             </div>
           </>
         )}
 
-        {/* ================= SEEKER DASHBOARD ================= */}
+        {/* ================= SEEKER DASHBOARD (Placeholder) ================= */}
         {!isWorker && (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Same Seeker View as before - Kept minimal for brevity, 
-                let me know if you want upgrades here too! */}
-            <div className="bg-shePink/20 rounded-3xl p-8 text-center border border-shePink/30">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Find Trusted Help, Instantly.</h2>
-              <div className="relative max-w-lg mx-auto mt-6">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input type="text" placeholder="Search for 'Electrician'..." className="w-full pl-12 pr-4 py-4 rounded-2xl border-none shadow-lg focus:ring-2 focus:ring-shePurple outline-none" />
-              </div>
-            </div>
-            
-            {/* Categories */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {['Electrician', 'Plumber', 'Caregiver', 'Cleaner', 'Cook', 'Painter'].map((cat) => (
-                <div key={cat} className="bg-white p-4 rounded-2xl shadow-sm text-center border border-gray-100 hover:border-shePurple hover:shadow-md transition cursor-pointer">
-                  <span className="text-sm font-bold text-gray-700">{cat}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Workers List */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {topWorkers.map((worker) => (
-                <div key={worker.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition">
-                  <div className="flex gap-4">
-                    <div className="w-16 h-16 bg-gray-200 rounded-2xl bg-cover" style={{backgroundImage: `url(https://randomuser.me/api/portraits/women/${worker.img}.jpg)`}}></div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{worker.name}</h4>
-                      <p className="text-sm text-shePurple font-medium">{worker.role}</p>
-                      <div className="flex items-center gap-1 mt-1 text-sm font-bold text-gray-700">⭐ {worker.rating}</div>
-                    </div>
-                  </div>
-                  <button className="w-full mt-4 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-shePurple transition">Book Now</button>
-                </div>
-              ))}
-            </div>
+          <div className="text-center py-20 text-gray-500">
+            <Briefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h2 className="text-2xl font-bold text-gray-700">Seeker Dashboard</h2>
+            <p>Switch to Worker role or Log in as a Seeker to view this section.</p>
           </div>
         )}
 
