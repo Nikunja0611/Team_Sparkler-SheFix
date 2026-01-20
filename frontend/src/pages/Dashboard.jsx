@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Shield, MapPin, Calendar, Briefcase, 
   CheckCircle, Search, Globe, LogOut, Filter, Clock, Banknote,
-  Home, BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Menu, X, Star
+  BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Star
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
 import axios from 'axios';
@@ -13,21 +13,22 @@ const Dashboard = () => {
   
   // --- STATE ---
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('home'); 
+  const [activeTab, setActiveTab] = useState('feed'); // 'feed', 'schedule', 'academy', 'profile'
   const [language, setLanguage] = useState('en'); 
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
   
   // --- DATA STATE ---
   const [stats, setStats] = useState({ earnings: 4500, jobsDone: 14, safetyScore: 98 });
-  const [availableJobs, setAvailableJobs] = useState([]); // For Workers
-  const [workersList, setWorkersList] = useState([]);     // For Seekers (NEW)
+  const [availableJobs, setAvailableJobs] = useState([]); // Worker Data
+  const [workersList, setWorkersList] = useState([]);     // Seeker Data
   const [mySchedule, setMySchedule] = useState([]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [serviceTypeFilter, setServiceTypeFilter] = useState('All');
+  const [locationFilter, setLocationFilter] = useState('');
 
-  // --- MOCK ACADEMY DATA ---
+  // --- ACADEMY DATA ---
   const courses = [
     { id: 1, title: "Fan Repair Basics", duration: "15 mins", lang: "Hindi", reward: "₹50 Bonus", img: "https://images.unsplash.com/photo-1581092921461-eab62e97a783?w=400&q=80" },
     { id: 2, title: "Safe Cleaning Chemicals", duration: "10 mins", lang: "Marathi", reward: "Badge", img: "https://images.unsplash.com/photo-1584622050111-993a426fbf0a?w=400&q=80" },
@@ -40,12 +41,10 @@ const Dashboard = () => {
       navigate('/login');
     } else {
       setUser(userInfo);
-      
-      // FETCH DATA BASED ON ROLE
       if (userInfo.role === 'worker') {
         fetchJobs();
       } else {
-        fetchWorkers(); // <--- Fetch Workers if Seeker
+        fetchWorkers();
       }
     }
   }, [navigate]);
@@ -68,7 +67,6 @@ const Dashboard = () => {
     }
   };
 
-  // --- HANDLERS ---
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
     navigate('/');
@@ -86,222 +84,234 @@ const Dashboard = () => {
   };
 
   const bookWorker = (workerName) => {
-    alert(`Booking Request sent to ${workerName}! \n\nWaiting for Pink-Shield Verification...`);
+    alert(`Booking Request sent to ${workerName}!`);
   };
 
-  if (!user) return null;
-  const isWorker = user.role === 'worker';
+  // --- FILTER LOGIC ---
+  const filteredJobs = availableJobs.filter(job => {
+    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLocation = locationFilter ? job.loc?.toLowerCase().includes(locationFilter.toLowerCase()) : true;
+    const matchesType = serviceTypeFilter === 'All' ? true : job.serviceType === serviceTypeFilter;
+    return matchesSearch && matchesLocation && matchesType;
+  });
 
-  // Navigation Items
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'schedule', label: 'My Bookings', icon: Calendar },
-    { id: 'profile', label: 'Profile', icon: UserIcon },
-  ];
-  if (isWorker) navItems.splice(2, 0, { id: 'academy', label: 'Skill Academy', icon: BookOpen });
-
-  // Filter Workers for Seeker
   const filteredWorkers = workersList.filter(worker => 
     worker.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (worker.profession && worker.profession.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  if (!user) return null;
+  const isWorker = user.role === 'worker';
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
+    <div className="min-h-screen bg-gray-50 pb-10 font-sans text-gray-800">
       
       {/* --- NAVBAR --- */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-md text-gray-500 hover:text-shePurple hover:bg-gray-100">
-                <Menu className="w-6 h-6" />
-              </button>
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-                <Shield className="w-7 h-7 text-shePurple fill-current" />
-                <h1 className="text-xl font-bold text-shePurple hidden sm:block">She-Fix</h1>
-              </div>
-              <div className="hidden md:flex ml-8 space-x-1">
-                {navItems.map((item) => (
-                  <button key={item.id} onClick={() => setActiveTab(item.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${activeTab === item.id ? 'bg-purple-50 text-shePurple' : 'text-gray-500 hover:text-shePurple'}`}>
-                    <item.icon className={`w-4 h-4 ${activeTab === item.id && 'fill-current'}`} /> {item.label}
-                  </button>
-                ))}
-              </div>
+      <div className="bg-white px-6 py-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('feed')}>
+          <Shield className="w-6 h-6 text-shePurple fill-current" />
+          <h1 className="text-xl font-bold text-shePurple">She-Fix</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')} className="p-2 bg-gray-100 rounded-full text-gray-600 hover:text-shePurple transition">
+            <Globe className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-gray-900">{user.name}</p>
+              <p className="text-xs text-shePurple capitalize">{user.role}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-shePurple to-shePink rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm">
-                {user.name.charAt(0)}
-              </div>
+            <div className="w-9 h-9 bg-gradient-to-br from-shePurple to-shePink rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm">
+              {user.name.charAt(0)}
             </div>
+            <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 ml-2"><LogOut className="w-5 h-5" /></button>
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* --- SIDEBAR DRAWER --- */}
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-gray-800 bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
-          <div className="relative w-64 bg-white shadow-xl h-full flex flex-col">
-            <div className="p-4 flex justify-between items-center border-b border-gray-100">
-               <h2 className="text-lg font-bold text-shePurple">Menu</h2>
-               <button onClick={() => setSidebarOpen(false)}><X className="w-6 h-6 text-gray-500" /></button>
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        
+        {/* ================= WORKER DASHBOARD ================= */}
+        {isWorker && (
+          <>
+            {/* 1. HERO BANNER (Restored) */}
+            <div className="bg-gradient-to-r from-shePurple to-purple-800 rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
+              <div className="relative z-10">
+                <h2 className="text-2xl md:text-3xl font-bold mb-1 text-white">Namaste, {user.name}! 🙏</h2>
+                <p className="text-purple-100 text-sm md:text-base opacity-90 mb-6">Tap the mic to find work instantly.</p>
+                
+                <div className="flex flex-wrap gap-4">
+                  <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                    <p className="text-xs text-purple-100 uppercase tracking-wider">Earnings</p>
+                    <p className="text-2xl font-bold text-white">₹{stats.earnings}</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                    <p className="text-xs text-purple-100 uppercase tracking-wider">Jobs Done</p>
+                    <p className="text-2xl font-bold text-white">{stats.jobsDone}</p>
+                  </div>
+                  <div className="bg-green-500/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-green-400/30 flex items-center gap-3">
+                    <div>
+                      <p className="text-xs text-green-100 uppercase tracking-wider">Safety</p>
+                      <p className="text-2xl font-bold text-green-300">{stats.safetyScore}%</p>
+                    </div>
+                    <Shield className="w-8 h-8 text-green-300 opacity-80" />
+                  </div>
+                </div>
+              </div>
+              <div className="absolute right-0 bottom-0 w-64 h-64 bg-white opacity-5 rounded-full translate-x-1/3 translate-y-1/3"></div>
             </div>
-            <div className="flex-1 py-4 space-y-1 px-2">
-              {navItems.map((item) => (
-                <button key={item.id} onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }} className="w-full px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-3 text-gray-600 hover:bg-purple-50 hover:text-shePurple">
-                  <item.icon className="w-5 h-5" /> {item.label}
+
+            {/* 2. TABS NAVIGATION (Restored) */}
+            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
+              {['feed', 'schedule', 'academy', 'profile'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-2.5 rounded-t-lg font-bold text-sm transition border-b-2 capitalize ${
+                    activeTab === tab 
+                      ? 'border-shePurple text-shePurple bg-purple-50' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {tab === 'feed' ? 'Jobs Near You' : tab === 'schedule' ? 'My Schedule' : tab === 'academy' ? 'Skill Academy' : 'Profile'}
                 </button>
               ))}
             </div>
-            <div className="p-4 border-t border-gray-100">
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg font-medium"><LogOut className="w-5 h-5" /> Logout</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* --- CONTENT --- */}
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-        
-        {/* ================= WORKER VIEW ================= */}
-        {activeTab === 'home' && isWorker && (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="bg-gradient-to-r from-shePurple to-purple-800 rounded-3xl p-6 text-white shadow-lg">
-               <h2 className="text-2xl font-bold mb-1">Namaste, {user.name}! 🙏</h2>
-               <p className="text-purple-100 opacity-90 mb-4">Find daily gigs or monthly employment.</p>
-               <div className="flex gap-3">
-                  <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl flex-1"><p className="text-xs text-purple-100">Earnings</p><p className="text-xl font-bold">₹{stats.earnings}</p></div>
-                  <div className="bg-green-500/20 backdrop-blur-md px-4 py-2 rounded-xl flex-1"><p className="text-xs text-green-100">Safety</p><p className="text-xl font-bold text-green-300">{stats.safetyScore}%</p></div>
-               </div>
-            </div>
-            
-            {/* Worker Job Feed */}
-            <div className="space-y-4">
-               {availableJobs.map((job) => (
-                  <div key={job._id || job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3">
-                     <div className="flex justify-between">
-                        <h4 className="font-bold text-gray-900">{job.title}</h4>
-                        <span className="text-shePurple font-bold">₹{job.pay}</span>
-                     </div>
-                     <div className="flex gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3"/> {job.location || job.loc}</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3"/> {job.duration}</span>
-                     </div>
-                     <button onClick={() => acceptJob(job)} className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm">Accept Job</button>
+            {/* 3. TAB CONTENT */}
+            <div className="min-h-[300px]">
+              
+              {/* --- JOBS FEED --- */}
+              {activeTab === 'feed' && (
+                <div className="space-y-4 animate-fadeIn">
+                  {/* Filters */}
+                  <div className="flex gap-2 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input 
+                        type="text" 
+                        placeholder="Search 'Cleaning'..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-white shadow-sm"
+                      />
+                    </div>
+                    <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-xl border transition ${showFilters ? 'bg-shePurple text-white' : 'bg-white text-gray-600'}`}>
+                      <Filter className="w-5 h-5" />
+                    </button>
                   </div>
-               ))}
-            </div>
-          </div>
-        )}
+                  
+                  {showFilters && (
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-2 gap-3 mb-4">
+                      <select value={serviceTypeFilter} onChange={(e) => setServiceTypeFilter(e.target.value)} className="p-2 border rounded-lg bg-gray-50"><option value="All">All Types</option><option value="Short Term">Short Term</option><option value="Long Term">Long Term</option></select>
+                      <input type="text" placeholder="Location" value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="p-2 border rounded-lg bg-gray-50" />
+                    </div>
+                  )}
 
-        {/* ================= SEEKER VIEW (NEW) ================= */}
-        {activeTab === 'home' && !isWorker && (
-          <div className="space-y-6 animate-fadeIn">
-            
-            {/* Seeker Hero */}
-            <div className="bg-shePink/20 rounded-3xl p-8 text-center border border-shePink/30">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Trusted Help</h2>
-              <p className="text-gray-600 mb-6 text-sm">Pink-Shield Verified Professionals for your safety.</p>
-              <div className="relative max-w-lg mx-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input 
-                  type="text" 
-                  placeholder="Search 'Maid', 'Cook'..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-shePurple outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Categories */}
-            <div>
-               <h3 className="font-bold text-gray-900 mb-3 px-1">Categories</h3>
-               <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                  {['Cleaner', 'Cook', 'Gardener', 'Caregiver', 'Electrician', 'Painter'].map(cat => (
-                     <button key={cat} onClick={() => setSearchQuery(cat)} className="bg-white p-3 rounded-xl border border-gray-100 text-sm font-medium hover:border-shePurple hover:text-shePurple transition shadow-sm">
-                        {cat}
-                     </button>
-                  ))}
-               </div>
-            </div>
-
-            {/* Workers List */}
-            <div>
-              <h3 className="font-bold text-gray-900 mb-3 px-1">Top Rated Professionals</h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredWorkers.length > 0 ? (
-                  filteredWorkers.map((worker) => (
-                    <div key={worker._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-                      <div className="flex gap-4">
-                        <div className="w-14 h-14 bg-gray-200 rounded-xl bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${worker.name}&background=random)`}}></div>
-                        <div>
-                          <h4 className="font-bold text-gray-900">{worker.name}</h4>
-                          <p className="text-sm text-shePurple font-medium">{worker.profession}</p>
-                          <div className="flex items-center gap-1 mt-1 text-xs font-bold text-gray-600">
-                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400"/> 4.8 Rating
+                  {filteredJobs.length > 0 ? (
+                    filteredJobs.map((job) => (
+                      <div key={job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4">
+                        <div className="flex items-center gap-4 w-full">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${job.category === 'Cleaning' ? 'bg-blue-50' : 'bg-orange-50'}`}>
+                            {job.category === 'Cleaning' ? '🧹' : job.category === 'Cooking' ? '🍳' : '🌱'}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900 text-lg">{job.title}</h4>
+                            <div className="flex gap-2 mt-1">
+                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 flex items-center gap-1"><MapPin className="w-3 h-3"/> {job.location || job.loc}</span>
+                              <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">{job.serviceType}</span>
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right min-w-[120px]">
+                          <p className="text-lg font-bold text-shePurple">₹{job.pay}</p>
+                          <p className="text-xs text-gray-500">/{job.unit}</p>
+                          <button onClick={() => acceptJob(job)} className="mt-2 w-full bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">Accept</button>
+                        </div>
                       </div>
-                      
-                      <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                         <span className="flex items-center gap-1 text-[10px] bg-green-50 text-green-700 px-2 py-1 rounded border border-green-100 font-bold">
-                           <Shield className="w-3 h-3"/> Verified
-                         </span>
-                         <button onClick={() => bookWorker(worker.name)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">
-                           Book Now
-                         </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-gray-500">No jobs found matching your filters.</div>
+                  )}
+                </div>
+              )}
+
+              {/* --- MY SCHEDULE --- */}
+              {activeTab === 'schedule' && (
+                <div className="space-y-4 animate-fadeIn">
+                   {mySchedule.length > 0 ? mySchedule.map((job, idx) => (
+                     <div key={idx} className="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm flex justify-between items-center">
+                       <div><h4 className="font-bold">{job.title}</h4><p className="text-sm text-gray-500">{job.location || job.loc}</p></div>
+                       <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Confirmed</div>
+                     </div>
+                   )) : <div className="text-center py-20 text-gray-400 border border-dashed rounded-2xl">No active jobs yet.</div>}
+                </div>
+              )}
+
+              {/* --- ACADEMY --- */}
+              {activeTab === 'academy' && (
+                <div className="grid md:grid-cols-2 gap-4 animate-fadeIn">
+                  {courses.map((course) => (
+                    <div key={course.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:shadow-md cursor-pointer">
+                       <div className="relative w-24 h-24 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                         <img src={course.img} alt={course.title} className="w-full h-full object-cover"/>
+                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center"><PlayCircle className="w-8 h-8 text-white"/></div>
+                       </div>
+                       <div>
+                         <h4 className="font-bold text-gray-900 line-clamp-2">{course.title}</h4>
+                         <p className="text-xs text-gray-500 mt-1">{course.duration} • {course.lang}</p>
+                         <span className="mt-2 inline-block bg-yellow-50 text-yellow-700 text-[10px] px-2 py-1 rounded font-bold border border-yellow-100">Reward: {course.reward}</span>
+                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-10 text-gray-400">
-                     No workers found matching "{searchQuery}"
+                  ))}
+                </div>
+              )}
+
+              {/* --- PROFILE --- */}
+              {activeTab === 'profile' && (
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center animate-fadeIn">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div>
+                  <h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2>
+                  <p className="text-shePurple font-medium capitalize">{user.profession}</p>
+                  <div className="mt-6 space-y-2 text-left">
+                     <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Language</span> <span className="font-bold">English</span></div>
+                     <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Verification</span> <span className="text-green-600 font-bold">Verified</span></div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          </div>
+          </>
         )}
 
-        {/* ================= SCHEDULE TAB (Shared) ================= */}
-        {activeTab === 'schedule' && (
-          <div className="space-y-4 animate-fadeIn">
-             <h2 className="text-xl font-bold text-gray-900">{isWorker ? 'My Jobs' : 'My Bookings'}</h2>
-             {mySchedule.length > 0 ? (
-               mySchedule.map((item, idx) => (
-                 <div key={idx} className="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm">
-                   <h4 className="font-bold">{item.title || "Booking #1234"}</h4>
-                   <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-bold">
-                     <CheckCircle className="w-3 h-3" /> Confirmed
-                   </div>
-                 </div>
-               ))
-             ) : (
-               <div className="text-center py-20 text-gray-400 border border-dashed rounded-2xl">
-                  No active {isWorker ? 'jobs' : 'bookings'}.
+        {/* ================= SEEKER DASHBOARD ================= */}
+        {!isWorker && (
+          <div className="space-y-6 animate-fadeIn">
+             <div className="bg-shePink/20 rounded-3xl p-8 text-center border border-shePink/30">
+               <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Trusted Help</h2>
+               <div className="relative max-w-lg mx-auto mt-4">
+                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                 <input type="text" placeholder="Search 'Maid', 'Cook'..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-shePurple outline-none" />
                </div>
-             )}
-          </div>
-        )}
+             </div>
 
-        {/* ================= PROFILE TAB (Shared) ================= */}
-        {activeTab === 'profile' && (
-          <div className="max-w-xl mx-auto space-y-6 animate-fadeIn">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" 
-                   style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div>
-              <h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2>
-              <p className="text-gray-500 capitalize">{user.role}</p>
-              <button onClick={handleLogout} className="mt-6 w-full bg-red-50 text-red-500 py-3 rounded-xl font-bold">Logout</button>
-            </div>
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredWorkers.map((worker) => (
+                  <div key={worker._id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex items-center gap-4">
+                    <div className="w-14 h-14 bg-gray-200 rounded-xl bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${worker.name}&background=random)`}}></div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900">{worker.name}</h4>
+                      <p className="text-sm text-shePurple font-medium">{worker.profession}</p>
+                      <button onClick={() => bookWorker(worker.name)} className="mt-2 text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold">Book Now</button>
+                    </div>
+                  </div>
+                ))}
+             </div>
           </div>
         )}
 
       </div>
       
-      {isWorker && <div className="fixed bottom-6 right-6 z-40"><VoiceCommand onCommand={handleVoiceCommand} /></div>}
+      {isWorker && <VoiceCommand onCommand={handleVoiceCommand} />}
     </div>
   );
 };
