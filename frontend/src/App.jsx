@@ -1,32 +1,27 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './index.css';
 
-// Component Imports
-import Landing from './pages/Landing'; 
+// Pages
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';     // <--- NEW
+import SkillAcademy from './pages/SkillAcademy'; // <--- NEW
 import VideoKYC from './components/VideoKYC';
-
-//Css Imports
-import './index.css';
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Default Route: Landing Page */}
         <Route path="/" element={<Landing />} />
-        
-        {/* Authentication Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} /> 
-        
-        {/* KYC Verification Route */}
+        <Route path="/register" element={<Register />} />
         <Route path="/verify" element={<VideoKYC />} />
-
-        {/* Future Routes (Placeholders) */}
-        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-        {/* <Route path="/login" element={<Login />} /> */}
+        
+        {/* New Protected Routes */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/academy" element={<SkillAcademy />} />
       </Routes>
     </Router>
   );
