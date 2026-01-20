@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Shield, MapPin, Calendar, Briefcase, 
   CheckCircle, Search, Globe, LogOut, Filter, Clock, Banknote,
-  BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Star
+  BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Star,
+  MessageSquare, Download
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
 import axios from 'axios';
@@ -134,7 +135,7 @@ const Dashboard = () => {
         {/* ================= WORKER DASHBOARD ================= */}
         {isWorker && (
           <>
-            {/* 1. HERO BANNER (Restored) */}
+            {/* 1. HERO BANNER */}
             <div className="bg-gradient-to-r from-shePurple to-purple-800 rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
               <div className="relative z-10">
                 <h2 className="text-2xl md:text-3xl font-bold mb-1 text-white">Namaste, {user.name}! 🙏</h2>
@@ -161,7 +162,7 @@ const Dashboard = () => {
               <div className="absolute right-0 bottom-0 w-64 h-64 bg-white opacity-5 rounded-full translate-x-1/3 translate-y-1/3"></div>
             </div>
 
-            {/* 2. TABS NAVIGATION (Restored) */}
+            {/* 2. TABS NAVIGATION */}
             <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
               {['feed', 'schedule', 'academy', 'profile'].map((tab) => (
                 <button
@@ -223,10 +224,40 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right min-w-[120px]">
-                          <p className="text-lg font-bold text-shePurple">₹{job.pay}</p>
-                          <p className="text-xs text-gray-500">/{job.unit}</p>
-                          <button onClick={() => acceptJob(job)} className="mt-2 w-full bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">Accept</button>
+                        
+                        <div className="text-right min-w-[140px] flex flex-col items-end gap-2">
+                          <div>
+                            <p className="text-lg font-bold text-shePurple">₹{job.pay}</p>
+                            <p className="text-[10px] text-gray-500">/{job.unit}</p>
+                          </div>
+
+                          {/* Pink-Shield Safety Badge */}
+                          {job.safetyVerified ? (
+                            <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
+                              <div className="relative flex items-center justify-center">
+                                <Shield className="w-3 h-3 text-green-600 fill-current" />
+                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
+                              </div>
+                              <span className="text-[9px] font-bold text-green-700 uppercase tracking-wide">Pink-Shield Safe</span>
+                            </div>
+                          ) : (
+                             <span className="text-[9px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100">Pending Verification</span>
+                          )}
+
+                          <div className="flex gap-2 w-full mt-1">
+                            {/* Bhashini Chat Button */}
+                            <button 
+                              onClick={() => alert("Connecting to Bhashini... \nTranslating Hindi <-> English")} 
+                              className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:text-shePurple hover:bg-purple-50 transition"
+                              title="Chat in your Language"
+                            >
+                              <MessageSquare className="w-5 h-5" />
+                            </button>
+                            
+                            <button onClick={() => acceptJob(job)} className="flex-1 bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">
+                              Accept
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))
@@ -269,13 +300,30 @@ const Dashboard = () => {
 
               {/* --- PROFILE --- */}
               {activeTab === 'profile' && (
-                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center animate-fadeIn">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div>
-                  <h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2>
-                  <p className="text-shePurple font-medium capitalize">{user.profession}</p>
-                  <div className="mt-6 space-y-2 text-left">
-                     <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Language</span> <span className="font-bold">English</span></div>
-                     <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Verification</span> <span className="text-green-600 font-bold">Verified</span></div>
+                <div className="space-y-6 animate-fadeIn">
+                  
+                  {/* PWA Install Banner */}
+                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 rounded-2xl shadow-lg flex items-center justify-between text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/10 p-2 rounded-lg">
+                        <Download className="w-6 h-6 text-shePink" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm">Install She-Fix</h4>
+                        <p className="text-[10px] text-gray-400">Add to Home Screen for Offline Mode</p>
+                      </div>
+                    </div>
+                    <button className="bg-white text-gray-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition">Install</button>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center">
+                    <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div>
+                    <h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2>
+                    <p className="text-shePurple font-medium capitalize">{user.profession}</p>
+                    <div className="mt-6 space-y-2 text-left">
+                       <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Language</span> <span className="font-bold">English</span></div>
+                       <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Verification</span> <span className="text-green-600 font-bold">Verified</span></div>
+                    </div>
                   </div>
                 </div>
               )}
