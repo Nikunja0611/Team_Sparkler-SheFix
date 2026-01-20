@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  MapPin, Calendar, Briefcase, 
+  Shield, MapPin, Calendar, Briefcase, 
   CheckCircle, Search, Globe, LogOut, Filter, Clock, Banknote,
   BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Star,
-  MessageSquare, Download, Menu, X, Shield // Shield is still used for safety badges
+  MessageSquare, Download, AlertTriangle, Plus, X
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
 import axios from 'axios';
 
-// --- IMPORT YOUR LOGO HERE ---
-// Make sure you have the file in 'frontend/src/assets/'
+// IMPORT YOUR LOGO
 import sheFixLogo from '../assets/logo.png'; 
 
 const Dashboard = () => {
@@ -27,11 +26,15 @@ const Dashboard = () => {
   const [workersList, setWorkersList] = useState([]);     
   const [mySchedule, setMySchedule] = useState([]);
 
-  // Filters
+  // --- UI STATE ---
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [serviceTypeFilter, setServiceTypeFilter] = useState('All');
   const [locationFilter, setLocationFilter] = useState('');
+  
+  // NEW: Post Job Modal State
+  const [showPostJobModal, setShowPostJobModal] = useState(false);
+  const [newJob, setNewJob] = useState({ title: '', category: 'Cleaning', pay: '', location: '' });
 
   // --- ACADEMY DATA ---
   const courses = [
@@ -92,6 +95,19 @@ const Dashboard = () => {
     alert(`Booking Request sent to ${workerName}!`);
   };
 
+  // NEW: Handle Panic Button
+  const handleSOS = () => {
+    alert("🚨 SOS TRIGGERED! \n\nLive Location sent to:\n1. Police Control Room\n2. Emergency Contacts\n3. She-Fix Safety Team");
+  };
+
+  // NEW: Handle Job Posting
+  const handlePostJob = (e) => {
+    e.preventDefault();
+    alert("Job Posted Successfully! \nWorkers in your area have been notified.");
+    setShowPostJobModal(false);
+    // In real app, you would POST to /api/jobs here
+  };
+
   // --- FILTER LOGIC ---
   const filteredJobs = availableJobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || job.category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -109,31 +125,19 @@ const Dashboard = () => {
   const isWorker = user.role === 'worker';
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10 font-sans text-gray-800">
+    <div className="min-h-screen bg-gray-50 pb-20 font-sans text-gray-800 relative">
       
       {/* --- NAVBAR --- */}
-      <div className="bg-white px-6 py-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
-        
-        {/* LOGO SECTION */}
+      <div className="bg-white px-6 py-4 shadow-sm flex justify-between items-center sticky top-0 z-40">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('feed')}>
-          {/* Replaced Icon with Image */}
-          <img 
-            src={sheFixLogo} 
-            alt="She-Fix Logo" 
-            className="w-10 h-10 object-contain" 
-          />
+          <img src={sheFixLogo} alt="Logo" className="w-10 h-10 object-contain" />
           <h1 className="text-xl font-bold text-shePurple">She-Fix</h1>
         </div>
-
         <div className="flex items-center gap-4">
           <button onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')} className="p-2 bg-gray-100 rounded-full text-gray-600 hover:text-shePurple transition">
             <Globe className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-gray-900">{user.name}</p>
-              <p className="text-xs text-shePurple capitalize">{user.role}</p>
-            </div>
             <div className="w-9 h-9 bg-gradient-to-br from-shePurple to-shePink rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-white shadow-sm">
               {user.name.charAt(0)}
             </div>
@@ -152,206 +156,111 @@ const Dashboard = () => {
               <div className="relative z-10">
                 <h2 className="text-2xl md:text-3xl font-bold mb-1 text-white">Namaste, {user.name}! 🙏</h2>
                 <p className="text-purple-100 text-sm md:text-base opacity-90 mb-6">Tap the mic to find work instantly.</p>
-                
                 <div className="flex flex-wrap gap-4">
-                  <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                    <p className="text-xs text-purple-100 uppercase tracking-wider">Earnings</p>
-                    <p className="text-2xl font-bold text-white">₹{stats.earnings}</p>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                    <p className="text-xs text-purple-100 uppercase tracking-wider">Jobs Done</p>
-                    <p className="text-2xl font-bold text-white">{stats.jobsDone}</p>
-                  </div>
-                  <div className="bg-green-500/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-green-400/30 flex items-center gap-3">
-                    <div>
-                      <p className="text-xs text-green-100 uppercase tracking-wider">Safety</p>
-                      <p className="text-2xl font-bold text-green-300">{stats.safetyScore}%</p>
-                    </div>
-                    <Shield className="w-8 h-8 text-green-300 opacity-80" />
-                  </div>
+                  <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10"><p className="text-xs text-purple-100 uppercase tracking-wider">Earnings</p><p className="text-2xl font-bold text-white">₹{stats.earnings}</p></div>
+                  <div className="bg-green-500/20 backdrop-blur-md px-5 py-3 rounded-2xl border border-green-400/30 flex items-center gap-3"><div><p className="text-xs text-green-100 uppercase tracking-wider">Safety</p><p className="text-2xl font-bold text-green-300">{stats.safetyScore}%</p></div><Shield className="w-8 h-8 text-green-300 opacity-80" /></div>
                 </div>
               </div>
-              <div className="absolute right-0 bottom-0 w-64 h-64 bg-white opacity-5 rounded-full translate-x-1/3 translate-y-1/3"></div>
             </div>
 
-            {/* 2. TABS NAVIGATION */}
+            {/* 2. TABS */}
             <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
               {['feed', 'schedule', 'academy', 'profile'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2.5 rounded-t-lg font-bold text-sm transition border-b-2 capitalize ${
-                    activeTab === tab 
-                      ? 'border-shePurple text-shePurple bg-purple-50' 
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
+                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2.5 rounded-t-lg font-bold text-sm transition border-b-2 capitalize ${activeTab === tab ? 'border-shePurple text-shePurple bg-purple-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
                   {tab === 'feed' ? 'Jobs Near You' : tab === 'schedule' ? 'My Schedule' : tab === 'academy' ? 'Skill Academy' : 'Profile'}
                 </button>
               ))}
             </div>
 
-            {/* 3. TAB CONTENT */}
+            {/* 3. CONTENT */}
             <div className="min-h-[300px]">
-              
-              {/* --- JOBS FEED --- */}
               {activeTab === 'feed' && (
                 <div className="space-y-4 animate-fadeIn">
                   {/* Filters */}
                   <div className="flex gap-2 mb-4">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input 
-                        type="text" 
-                        placeholder="Search 'Cleaning'..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-white shadow-sm"
-                      />
+                      <input type="text" placeholder="Search 'Cleaning'..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 focus:border-shePurple outline-none bg-white shadow-sm" />
                     </div>
-                    <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-xl border transition ${showFilters ? 'bg-shePurple text-white' : 'bg-white text-gray-600'}`}>
-                      <Filter className="w-5 h-5" />
-                    </button>
+                    <button onClick={() => setShowFilters(!showFilters)} className={`p-3 rounded-xl border transition ${showFilters ? 'bg-shePurple text-white' : 'bg-white text-gray-600'}`}><Filter className="w-5 h-5" /></button>
                   </div>
-                  
                   {showFilters && (
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-2 gap-3 mb-4">
                       <select value={serviceTypeFilter} onChange={(e) => setServiceTypeFilter(e.target.value)} className="p-2 border rounded-lg bg-gray-50"><option value="All">All Types</option><option value="Short Term">Short Term</option><option value="Long Term">Long Term</option></select>
                       <input type="text" placeholder="Location" value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="p-2 border rounded-lg bg-gray-50" />
                     </div>
                   )}
-
+                  {/* Job List */}
                   {filteredJobs.length > 0 ? (
                     filteredJobs.map((job) => (
-                      <div key={job._id || job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4">
+                      <div key={job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4">
                         <div className="flex items-center gap-4 w-full">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${job.category === 'Cleaning' ? 'bg-blue-50' : 'bg-orange-50'}`}>
-                            {job.category === 'Cleaning' ? '🧹' : job.category === 'Cooking' ? '🍳' : '🌱'}
-                          </div>
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${job.category === 'Cleaning' ? 'bg-blue-50' : 'bg-orange-50'}`}>{job.category === 'Cleaning' ? '🧹' : '🍳'}</div>
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-900 text-lg">{job.title}</h4>
-                            <div className="flex gap-2 mt-1">
-                              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 flex items-center gap-1"><MapPin className="w-3 h-3"/> {job.location || job.loc}</span>
-                              <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">{job.serviceType}</span>
-                            </div>
+                            <div className="flex gap-2 mt-1"><span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 flex items-center gap-1"><MapPin className="w-3 h-3"/> {job.location || job.loc}</span><span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">{job.serviceType}</span></div>
                           </div>
                         </div>
-                        
                         <div className="text-right min-w-[140px] flex flex-col items-end gap-2">
-                          <div>
-                            <p className="text-lg font-bold text-shePurple">₹{job.pay}</p>
-                            <p className="text-[10px] text-gray-500">/{job.unit}</p>
-                          </div>
-
-                          {/* Pink-Shield Safety Badge */}
+                          <div><p className="text-lg font-bold text-shePurple">₹{job.pay}</p><p className="text-[10px] text-gray-500">/{job.unit}</p></div>
                           {job.safetyVerified ? (
-                            <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
-                              <div className="relative flex items-center justify-center">
-                                <Shield className="w-3 h-3 text-green-600 fill-current" />
-                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span>
-                              </div>
-                              <span className="text-[9px] font-bold text-green-700 uppercase tracking-wide">Pink-Shield Safe</span>
-                            </div>
-                          ) : (
-                             <span className="text-[9px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100">Pending Verification</span>
-                          )}
-
+                            <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2 py-1 rounded-full"><div className="relative flex items-center justify-center"><Shield className="w-3 h-3 text-green-600 fill-current" /><span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-ping"></span></div><span className="text-[9px] font-bold text-green-700 uppercase tracking-wide">Pink-Shield Safe</span></div>
+                          ) : <span className="text-[9px] bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100">Pending Verification</span>}
                           <div className="flex gap-2 w-full mt-1">
-                            {/* Bhashini Chat Button */}
-                            <button 
-                              onClick={() => alert("Connecting to Bhashini... \nTranslating Hindi <-> English")} 
-                              className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:text-shePurple hover:bg-purple-50 transition"
-                              title="Chat in your Language"
-                            >
-                              <MessageSquare className="w-5 h-5" />
-                            </button>
-                            
-                            <button onClick={() => acceptJob(job)} className="flex-1 bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">
-                              Accept
-                            </button>
+                            <button onClick={() => alert("Connecting to Bhashini...")} className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:text-shePurple hover:bg-purple-50 transition"><MessageSquare className="w-5 h-5" /></button>
+                            <button onClick={() => acceptJob(job)} className="flex-1 bg-gray-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-shePurple transition">Accept</button>
                           </div>
                         </div>
                       </div>
                     ))
-                  ) : (
-                    <div className="text-center py-10 text-gray-500">No jobs found matching your filters.</div>
-                  )}
+                  ) : <div className="text-center py-10 text-gray-500">No jobs found.</div>}
                 </div>
               )}
-
-              {/* --- MY SCHEDULE --- */}
               {activeTab === 'schedule' && (
-                <div className="space-y-4 animate-fadeIn">
-                   {mySchedule.length > 0 ? mySchedule.map((job, idx) => (
-                     <div key={idx} className="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm flex justify-between items-center">
-                       <div><h4 className="font-bold">{job.title}</h4><p className="text-sm text-gray-500">{job.location || job.loc}</p></div>
-                       <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Confirmed</div>
-                     </div>
-                   )) : <div className="text-center py-20 text-gray-400 border border-dashed rounded-2xl">No active jobs yet.</div>}
-                </div>
+                <div className="space-y-4 animate-fadeIn">{mySchedule.length > 0 ? mySchedule.map((job, idx) => (<div key={idx} className="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm flex justify-between items-center"><div><h4 className="font-bold">{job.title}</h4><p className="text-sm text-gray-500">{job.location || job.loc}</p></div><div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Confirmed</div></div>)) : <div className="text-center py-20 text-gray-400 border border-dashed rounded-2xl">No active jobs yet.</div>}</div>
               )}
-
-              {/* --- ACADEMY --- */}
               {activeTab === 'academy' && (
-                <div className="grid md:grid-cols-2 gap-4 animate-fadeIn">
-                  {courses.map((course) => (
-                    <div key={course.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:shadow-md cursor-pointer">
-                       <div className="relative w-24 h-24 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
-                         <img src={course.img} alt={course.title} className="w-full h-full object-cover"/>
-                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center"><PlayCircle className="w-8 h-8 text-white"/></div>
-                       </div>
-                       <div>
-                         <h4 className="font-bold text-gray-900 line-clamp-2">{course.title}</h4>
-                         <p className="text-xs text-gray-500 mt-1">{course.duration} • {course.lang}</p>
-                         <span className="mt-2 inline-block bg-yellow-50 text-yellow-700 text-[10px] px-2 py-1 rounded font-bold border border-yellow-100">Reward: {course.reward}</span>
-                       </div>
-                    </div>
-                  ))}
-                </div>
+                <div className="grid md:grid-cols-2 gap-4 animate-fadeIn">{courses.map((course) => (<div key={course.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 hover:shadow-md cursor-pointer"><div className="relative w-24 h-24 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0"><img src={course.img} alt={course.title} className="w-full h-full object-cover"/><div className="absolute inset-0 bg-black/20 flex items-center justify-center"><PlayCircle className="w-8 h-8 text-white"/></div></div><div><h4 className="font-bold text-gray-900 line-clamp-2">{course.title}</h4><p className="text-xs text-gray-500 mt-1">{course.duration} • {course.lang}</p><span className="mt-2 inline-block bg-yellow-50 text-yellow-700 text-[10px] px-2 py-1 rounded font-bold border border-yellow-100">Reward: {course.reward}</span></div></div>))}</div>
               )}
-
-              {/* --- PROFILE --- */}
               {activeTab === 'profile' && (
                 <div className="space-y-6 animate-fadeIn">
-                  
-                  {/* PWA Install Banner */}
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 rounded-2xl shadow-lg flex items-center justify-between text-white">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-white/10 p-2 rounded-lg">
-                        <Download className="w-6 h-6 text-shePink" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm">Install She-Fix</h4>
-                        <p className="text-[10px] text-gray-400">Add to Home Screen for Offline Mode</p>
-                      </div>
-                    </div>
-                    <button className="bg-white text-gray-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition">Install</button>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center">
-                    <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2>
-                    <p className="text-shePurple font-medium capitalize">{user.profession}</p>
-                    <div className="mt-6 space-y-2 text-left">
-                       <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Language</span> <span className="font-bold">English</span></div>
-                       <div className="p-3 bg-gray-50 rounded-lg flex justify-between"><span className="text-gray-600">Verification</span> <span className="text-green-600 font-bold">Verified</span></div>
-                    </div>
-                  </div>
+                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-4 rounded-2xl shadow-lg flex items-center justify-between text-white"><div className="flex items-center gap-3"><div className="bg-white/10 p-2 rounded-lg"><Download className="w-6 h-6 text-shePink" /></div><div><h4 className="font-bold text-sm">Install She-Fix</h4><p className="text-[10px] text-gray-400">Add to Home Screen for Offline Mode</p></div></div><button className="bg-white text-gray-900 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition">Install</button></div>
+                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center"><div className="w-24 h-24 bg-gray-200 rounded-full mx-auto border-4 border-white shadow-lg bg-cover" style={{backgroundImage: `url(https://ui-avatars.com/api/?name=${user.name}&background=6B4C9A&color=fff&size=128)`}}></div><h2 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h2><p className="text-shePurple font-medium capitalize">{user.profession}</p></div>
                 </div>
               )}
             </div>
+
+            {/* --- 🚨 SOS BUTTON (NEW) --- */}
+            <button 
+              onClick={handleSOS}
+              className="fixed bottom-24 right-6 bg-red-600 text-white p-4 rounded-full shadow-xl shadow-red-200 border-4 border-red-100 hover:scale-110 active:scale-95 transition z-50 animate-pulse"
+            >
+              <AlertTriangle className="w-8 h-8" />
+              <span className="absolute top-0 right-0 w-3 h-3 bg-red-400 rounded-full animate-ping"></span>
+            </button>
+            <div className="fixed bottom-24 left-6 text-xs font-bold text-red-500 bg-white px-2 py-1 rounded shadow-sm border border-red-100">SOS Mode</div>
           </>
         )}
 
         {/* ================= SEEKER DASHBOARD ================= */}
         {!isWorker && (
           <div className="space-y-6 animate-fadeIn">
-             <div className="bg-shePink/20 rounded-3xl p-8 text-center border border-shePink/30">
+             <div className="bg-shePink/20 rounded-3xl p-8 text-center border border-shePink/30 relative">
                <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Trusted Help</h2>
-               <div className="relative max-w-lg mx-auto mt-4">
+               
+               {/* Search Bar */}
+               <div className="relative max-w-lg mx-auto mt-4 mb-6">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                  <input type="text" placeholder="Search 'Maid', 'Cook'..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-shePurple outline-none" />
                </div>
+
+               {/* Post Job Button (NEW) */}
+               <button 
+                 onClick={() => setShowPostJobModal(true)}
+                 className="bg-shePurple text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-800 transition flex items-center gap-2 mx-auto"
+               >
+                 <Plus className="w-5 h-5" /> Post a New Requirement
+               </button>
              </div>
 
              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -371,6 +280,35 @@ const Dashboard = () => {
 
       </div>
       
+      {/* --- POST JOB MODAL (SEEKER) --- */}
+      {showPostJobModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative animate-fadeIn">
+            <button onClick={() => setShowPostJobModal(false)} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200"><X className="w-5 h-5"/></button>
+            <h2 className="text-2xl font-bold text-shePurple mb-4">Post a Requirement</h2>
+            <form onSubmit={handlePostJob} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Job Title</label>
+                <input required placeholder="e.g. Need Cook for Dinner" className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-shePurple" onChange={(e) => setNewJob({...newJob, title: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
+                   <select className="w-full p-3 rounded-xl border border-gray-200 outline-none" onChange={(e) => setNewJob({...newJob, category: e.target.value})}>
+                     <option>Cleaning</option><option>Cooking</option><option>Care</option><option>Gardening</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Pay (₹)</label>
+                   <input required type="number" placeholder="500" className="w-full p-3 rounded-xl border border-gray-200 outline-none" onChange={(e) => setNewJob({...newJob, pay: e.target.value})} />
+                 </div>
+              </div>
+              <button type="submit" className="w-full bg-shePurple text-white py-3 rounded-xl font-bold hover:bg-purple-800 transition">Post Job Now</button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isWorker && <VoiceCommand onCommand={handleVoiceCommand} />}
     </div>
   );
