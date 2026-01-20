@@ -47,3 +47,5 @@ env/
 tmp/
 temp/
 coverage/
+
+frontend/src/firebase.js

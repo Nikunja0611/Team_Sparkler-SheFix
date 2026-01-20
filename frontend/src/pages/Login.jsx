@@ -1,103 +1,109 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, User, Lock, ArrowRight, Mic } from 'lucide-react';
-import { loginUser } from '../services/api';
+import { Shield, Mail, Lock, ArrowRight } from 'lucide-react';
+
+// Firebase Imports
+import { auth, googleProvider, db } from '../firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState(''); // Stores Name OR Phone
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
+  // --- GOOGLE SIGN IN ---
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Check if user exists in Firestore (Do they have a Role?)
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (userDoc.exists()) {
+        alert(`Welcome back, ${user.displayName}! 🌸`);
+        navigate('/dashboard');
+      } else {
+        // User is new, but we don't know if they are a Worker or Seeker yet.
+        // Delete the auth instance temporarily or just redirect to Register to finish profile
+        alert("Account not found. Please Register to select your Role.");
+        navigate('/register');
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Google Sign-In Failed");
+    }
+  };
+
+  // --- EMAIL LOGIN ---
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Sending 'identifier' which backend should handle as name or phone
-      await loginUser({ identifier, password }); 
-      alert("Login Successful! ✅");
-      navigate('/dashboard'); // Redirect to dashboard
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("Login Successful! 🌸");
+      navigate('/dashboard'); 
     } catch (error) {
-      alert("Invalid Credentials ❌");
+      alert("Invalid Email or Password ❌");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-white text-gray-800">
+      {/* ... (Keep your existing background animations) ... */}
       
-      {/* Background Decoration */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full filter blur-3xl opacity-20 -z-10 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-200 rounded-full filter blur-3xl opacity-20 -z-10"></div>
-
-      <div className="bg-white/80 backdrop-blur-xl w-full max-w-md rounded-3xl shadow-2xl border border-white/50 p-8 md:p-10">
-        
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-shePurple to-purple-700 text-white shadow-lg shadow-purple-200 mb-4 transform hover:scale-105 transition duration-300">
-            <Shield className="w-7 h-7" />
+      <div className="relative z-10 w-full max-w-md bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl p-8 md:p-10">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-shePurple to-purple-700 shadow-lg mb-4 text-white">
+            <Shield className="w-8 h-8" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h2>
-          <p className="text-gray-500 mt-2 text-sm">Safe. Skilled. Secure.</p>
+          <h2 className="text-3xl font-bold text-shePurple">Welcome Back</h2>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          
-          {/* Identifier Field (Name or Phone) */}
+        {/* GOOGLE BUTTON */}
+        <button 
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition flex items-center justify-center gap-3 mb-6 shadow-sm"
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="Google" />
+          Sign in with Google
+        </button>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
+          <div className="relative flex justify-center text-sm"><span className="px-2 bg-white/50 text-gray-500">Or with Email</span></div>
+        </div>
+
+        {/* Existing Form */}
+        <form onSubmit={handleEmailLogin} className="space-y-6">
+          {/* ... (Keep your existing Email/Password Inputs) ... */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Name or Phone Number <span className="text-red-500">*</span></label>
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-shePurple transition" />
-              <input 
-                type="text" 
-                required // <--- VALIDATION
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-shePurple/30 focus:border-shePurple transition font-medium text-gray-700 placeholder-gray-400"
-                placeholder="Savita Devi / 9876543210"
-              />
-              <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-shePurple transition">
-                <Mic className="w-5 h-5" />
-              </button>
+            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Email</label>
+            <div className="relative flex items-center bg-white rounded-xl border border-gray-200 p-1">
+              <div className="p-3 text-gray-400"><Mail className="w-5 h-5" /></div>
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent font-medium px-2 py-2 focus:outline-none" placeholder="name@example.com" />
             </div>
           </div>
 
-          {/* Password Field */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Password <span className="text-red-500">*</span></label>
-            <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-shePurple transition" />
-              <input 
-                type="password"
-                required // <--- VALIDATION
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-shePurple/30 focus:border-shePurple transition font-medium text-gray-700 placeholder-gray-400"
-                placeholder="••••••••"
-              />
+            <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
+            <div className="relative flex items-center bg-white rounded-xl border border-gray-200 p-1">
+              <div className="p-3 text-gray-400"><Lock className="w-5 h-5" /></div>
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent font-medium px-2 py-2 focus:outline-none" placeholder="••••••••" />
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-shePurple to-purple-700 text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-purple-200 hover:shadow-2xl hover:-translate-y-1 transition duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-            {!loading && <ArrowRight className="w-5 h-5" />}
+          <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-shePurple to-purple-700 text-white py-4 rounded-xl font-bold text-lg shadow-xl flex items-center justify-center gap-2">
+            {loading ? 'Signing in...' : 'Sign In'} <ArrowRight className="w-5 h-5" />
           </button>
-
         </form>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-600 text-sm">
-            New to She-Fix?{' '}
-            <Link to="/register" className="text-shePurple font-bold hover:text-purple-800 transition">
-              Create Account
-            </Link>
-          </p>
+          <p className="text-gray-500 text-sm">Don't have an account? <Link to="/register" className="text-shePurple font-bold hover:underline">Create one</Link></p>
         </div>
       </div>
     </div>
