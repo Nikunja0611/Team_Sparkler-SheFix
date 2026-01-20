@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 // Load env vars
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(cors());
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Default Route
 app.get('/', (req, res) => {

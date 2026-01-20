@@ -5,6 +5,7 @@ import {
   CheckCircle, Search, Mic, Globe, LogOut, Filter, Clock, Banknote
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
+import axios from 'axios';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,64 +24,25 @@ const Dashboard = () => {
   // Worker Stats
   const [stats, setStats] = useState({ earnings: 4500, jobsDone: 14, safetyScore: 98 });
 
-  // --- MOCK DATA (Updated with Service Types) ---
-  const [availableJobs, setAvailableJobs] = useState([
-    { 
-      id: 1, 
-      title: "Deep House Cleaning", 
-      loc: "Sector 12, Navi Mumbai", 
-      pay: 300, 
-      unit: "hr", 
-      serviceType: "Short Term", 
-      category: "Cleaning", 
-      duration: "4 Hours (Today)", 
-      safety: "Verified" 
-    },
-    { 
-      id: 2, 
-      title: "Full-Time Cook", 
-      loc: "Nerul, Mumbai", 
-      pay: 15000, 
-      unit: "month", 
-      serviceType: "Long Term", 
-      category: "Cooking", 
-      duration: "6 Months Contract", 
-      safety: "Verified" 
-    },
-    { 
-      id: 3, 
-      title: "Garden Maintenance", 
-      loc: "Vashi, Mumbai", 
-      pay: 500, 
-      unit: "task", 
-      serviceType: "Short Term", 
-      category: "Gardening", 
-      duration: "One Time Task", 
-      safety: "Pending" 
-    },
-    { 
-      id: 4, 
-      title: "Elderly Caretaker", 
-      loc: "Belapur, Mumbai", 
-      pay: 18000, 
-      unit: "month", 
-      serviceType: "Long Term", 
-      category: "Care", 
-      duration: "1 Year Contract", 
-      safety: "Verified" 
-    },
-    { 
-      id: 5, 
-      title: "Utensil Cleaning", 
-      loc: "Kharghar, Mumbai", 
-      pay: 200, 
-      unit: "hr", 
-      serviceType: "Short Term", 
-      category: "Cleaning", 
-      duration: "1 Hour (Daily)", 
-      safety: "Verified" 
-    },
-  ]);
+  const [availableJobs, setAvailableJobs] = useState([]);
+
+useEffect(() => {
+  const fetchJobs = async () => {
+    try {
+      const { data } = await axios.get('http://localhost:5000/api/jobs');
+      setAvailableJobs(data);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    }
+  };
+
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  if (!userInfo) navigate('/login');
+  else {
+    setUser(userInfo);
+    fetchJobs(); // <--- Fetch jobs when dashboard loads
+  }
+}, [navigate]);
 
   const [mySchedule, setMySchedule] = useState([]);
 
