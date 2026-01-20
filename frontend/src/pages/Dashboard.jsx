@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Shield, MapPin, Calendar, Briefcase, 
+  MapPin, Calendar, Briefcase, 
   CheckCircle, Search, Globe, LogOut, Filter, Clock, Banknote,
   BookOpen, User as UserIcon, PlayCircle, Award, ChevronRight, Star,
-  MessageSquare, Download
+  MessageSquare, Download, Menu, X, Shield // Shield is still used for safety badges
 } from 'lucide-react';
 import VoiceCommand from '../components/VoiceCommand';
 import axios from 'axios';
+
+// --- IMPORT YOUR LOGO HERE ---
+// Make sure you have the file in 'frontend/src/assets/'
+import sheFixLogo from '../assets/logo.png'; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
   
   // --- STATE ---
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('feed'); // 'feed', 'schedule', 'academy', 'profile'
+  const [activeTab, setActiveTab] = useState('feed'); 
   const [language, setLanguage] = useState('en'); 
   
   // --- DATA STATE ---
   const [stats, setStats] = useState({ earnings: 4500, jobsDone: 14, safetyScore: 98 });
-  const [availableJobs, setAvailableJobs] = useState([]); // Worker Data
-  const [workersList, setWorkersList] = useState([]);     // Seeker Data
+  const [availableJobs, setAvailableJobs] = useState([]); 
+  const [workersList, setWorkersList] = useState([]);     
   const [mySchedule, setMySchedule] = useState([]);
 
   // Filters
@@ -109,10 +113,18 @@ const Dashboard = () => {
       
       {/* --- NAVBAR --- */}
       <div className="bg-white px-6 py-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('feed')}>
-          <Shield className="w-6 h-6 text-shePurple fill-current" />
+        
+        {/* LOGO SECTION */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('feed')}>
+          {/* Replaced Icon with Image */}
+          <img 
+            src={sheFixLogo} 
+            alt="She-Fix Logo" 
+            className="w-10 h-10 object-contain" 
+          />
           <h1 className="text-xl font-bold text-shePurple">She-Fix</h1>
         </div>
+
         <div className="flex items-center gap-4">
           <button onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')} className="p-2 bg-gray-100 rounded-full text-gray-600 hover:text-shePurple transition">
             <Globe className="w-5 h-5" />
@@ -211,7 +223,7 @@ const Dashboard = () => {
 
                   {filteredJobs.length > 0 ? (
                     filteredJobs.map((job) => (
-                      <div key={job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4">
+                      <div key={job._id || job.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center hover:shadow-md transition gap-4">
                         <div className="flex items-center gap-4 w-full">
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${job.category === 'Cleaning' ? 'bg-blue-50' : 'bg-orange-50'}`}>
                             {job.category === 'Cleaning' ? '🧹' : job.category === 'Cooking' ? '🍳' : '🌱'}
