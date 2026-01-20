@@ -1,13 +1,11 @@
 const axios = require('axios');
 
-// This is a placeholder. You need to get actual credentials and endpoint URLs from the Bhashini platform.
-const BHASHINI_API_URL = 'https://bhashini.gov.in/api/v1/translate'; 
-const BHASHINI_API_KEY = process.env.BHASHINI_API_KEY;
-
+// Placeholder wrapper for Bhashini API
 const translateText = async (text, sourceLang, targetLang) => {
   try {
-    // Construct the request payload according to Bhashini's API documentation
-    const payload = {
+    // NOTE: This URL and payload structure are conceptual. 
+    // You must refer to the official Bhashini dashboard for your specific pipeline ID.
+    const response = await axios.post('https://dhruva-api.bhashini.gov.in/services/inference/translation', {
       "pipelineTasks": [
         {
           "taskType": "translation",
@@ -20,27 +18,19 @@ const translateText = async (text, sourceLang, targetLang) => {
         }
       ],
       "inputData": {
-        "input": [
-          {
-            "source": text
-          }
-        ]
+        "input": [{ "source": text }]
       }
-    };
-
-    const response = await axios.post(BHASHINI_API_URL, payload, {
+    }, {
       headers: {
-        'Authorization': `Bearer ${BHASHINI_API_KEY}`,
+        'Authorization': `Bearer ${process.env.BHASHINI_API_KEY}`,
         'Content-Type': 'application/json'
       }
     });
 
-    // Extract the translated text from the response
-    const translatedText = response.data.pipelineResponse[0].output[0].target;
-    return translatedText;
+    return response.data.pipelineResponse[0].output[0].target;
   } catch (error) {
-    console.error('Error translating text with Bhashini:', error);
-    throw error;
+    console.error("Bhashini Error:", error.message);
+    return text; // Fallback to original text if translation fails
   }
 };
 
