@@ -9,13 +9,20 @@ const VideoKYC = ({ userId, onVerified }) => {
   // Load Face API Models
   useEffect(() => {
     const loadModels = async () => {
-      const MODEL_URL = '/models'; // Ensure models are in public/models
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      ]);
-      startVideo();
+      const MODEL_URL = '/models'; // <--- Points to public/models
+
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        console.log("Models Loaded Successfully");
+      } catch (error) {
+        console.error("Error loading models:", error);
+      }
     };
+
     loadModels();
   }, []);
 
