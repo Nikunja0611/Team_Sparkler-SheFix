@@ -9,6 +9,9 @@ export default {
       colors: {
         shePurple: '#6B4C9A',
         shePink: '#FFC1E3',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       }
     },
   },
