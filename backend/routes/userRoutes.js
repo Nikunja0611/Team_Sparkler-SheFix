@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser } = require('../controllers/userController');
-
+const { registerUser, loginUser, getWorkers } = require('../controllers/userController');
 // 1. Existing Routes
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.get('/workers', getWorkers);
 
 // 2. ADD THIS NEW ROUTE (The Fix)
 router.post('/kyc', (req, res) => {

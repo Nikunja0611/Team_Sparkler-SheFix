@@ -69,4 +69,17 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+// @desc    Get all workers for Seeker Dashboard
+// @route   GET /api/users/workers
+const getWorkers = async (req, res) => {
+  try {
+    // Find users with role 'worker' and hide their password
+    const workers = await User.find({ role: 'worker' }).select('-password');
+    res.json(workers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Export the new function
+module.exports = { registerUser, loginUser, getWorkers };
